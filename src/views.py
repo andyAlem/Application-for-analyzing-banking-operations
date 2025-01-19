@@ -11,7 +11,7 @@ def main(date_time_str):
     json о банковских транзакциях за период с начала месяца до этой даты.
     """
     try:
-        data = read_excel_data("operations.xlsx")  # Предполагается, что эта функция определена где-то ещё
+        data = read_excel_data("operations.xlsx")
         data_df = pd.DataFrame(data)
 
         target_date = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
@@ -23,7 +23,8 @@ def main(date_time_str):
             (data_df["datetime"] >= start_of_month) & (data_df["datetime"] <= target_date)
         ]
 
-        filtered_data["datetime"] = filtered_data["datetime"].apply(lambda x: x.isoformat() if pd.notna(x) else None)
+        filtered_data["datetime"] = filtered_data["datetime"].dt.strftime('%Y-%m-%d %H:%M:%S')
+
 
         result = {
             "greetings": greet_user(),
@@ -38,5 +39,5 @@ def main(date_time_str):
     except Exception as e:
         return json.dumps({"Ошибка": f"Ошибка при суммировании. Ошибка: {e}"}, ensure_ascii=False, indent=4)
 
-if __name__ == "__main__":
-    print(main(date_time_str="2020-08-11 15:25:00"))
+# if __name__ == "__main__":
+#     print(main(date_time_str="2020-08-11 15:25:00"))

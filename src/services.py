@@ -50,14 +50,6 @@ def get_top_cashback_categories(transactions: list[dict], year: int, month: Unio
 def calculate_investment_potential(transactions: list[dict], month: str, rounding_limit: int) -> float:
     """
     Рассчитывает сумму, которую можно отложить с трат при заданном размере округления.
-
-    Args:
-        transactions (list[dict]): Список транзакций.
-        month (str): Месяц в формате "YYYY-MM".
-        rounding_limit (int): Порог округления.
-
-    Returns:
-        float: Сумма, которую можно отложить.
     """
     try:
         if not transactions:
