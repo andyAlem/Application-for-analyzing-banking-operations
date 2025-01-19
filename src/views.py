@@ -5,22 +5,25 @@ import pandas as pd
 
 from src.utils import get_common_transaction_info, read_excel_data, fetch_exchange_rates, fetch_stock_prices, greet_user, get_top_operations
 
-def main(date_time_str: str) -> str:
+def main(date_time_str):
     """
-    Функцмя принимает дату в формате строки YYYY-MM-DD HH:MM:SS и возвращает общую информацию в формате
-    json о банковских транзакциях за период с начала месяца до этой даты
+    Функция принимает дату в формате строки YYYY-MM-DD HH:MM:SS и возвращает общую информацию в формате
+    json о банковских транзакциях за период с начала месяца до этой даты.
     """
     try:
-        data = read_excel_data("operations.xlsx")
+        data = read_excel_data("operations.xlsx")  # Предполагается, что эта функция определена где-то ещё
         data_df = pd.DataFrame(data)
 
         target_date = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
 
-        data_df["datetime"] = pd.to_datetime(data_df["Дата операции"], dayfirst=True)
+        data_df["datetime"] = pd.to_datetime(data_df["Дата операции"], dayfirst=True, errors='coerce')
 
+        start_of_month = target_date.replace(day=1)
         filtered_data = data_df[
-            (data_df["datetime"] >= target_date.replace(day=1)) & (data_df["datetime"] <= target_date)
+            (data_df["datetime"] >= start_of_month) & (data_df["datetime"] <= target_date)
         ]
+
+        filtered_data["datetime"] = filtered_data["datetime"].apply(lambda x: x.isoformat() if pd.notna(x) else None)
 
         result = {
             "greetings": greet_user(),
