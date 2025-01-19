@@ -12,23 +12,28 @@ logger = logging.getLogger("spending_by_weekday")
 
 def print_spending_by_date(func):
     """Декоратор для записи результата функции в файл report_1.txt."""
+
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         with open(os.path.join("./print_decorators/report_1.txt"), "w") as file:
-            file.write(result.to_string(header=False))
+            file.write(result)  # Записываем строку, а не пытаемся вызвать to_string
         return result
+
     return wrapper
 
 
 def print_name_spending_by_date(file_name: str):
     """Декоратор для записи результата функции в указанный файл."""
+
     def my_decorator(func):
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             with open(os.path.join(f"./print_decorators/{file_name}"), "w") as file:
-                file.write(result.to_string(header=False))
+                file.write(result)  # Записываем строку
             return result
+
         return wrapper
+
     return my_decorator
 
 
@@ -53,7 +58,7 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         result = grouped["Сумма платежа"].mean().abs().round(2)
 
         logger.info("Успешное формирование отчета о средних тратах по дням недели.")
-        return result.to_json()
+        return result.to_json()  # Результат возвращается как строка JSON
 
     except Exception as e:
         logger.error(f"Не удалось сформировать отчет. Ошибка: {e}")
