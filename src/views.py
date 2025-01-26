@@ -40,5 +40,5 @@ def main(date_time_str):
         return json.dumps({"Ошибка": f"Ошибка при суммировании. Ошибка: {e}"}, ensure_ascii=False, indent=4)
 
 
-# if __name__ == "__main__":
-#     print(main(date_time_str="2019-04-21 19:48:33"))
+if __name__ == "__main__":
+    print(main(date_time_str="2019-04-21 19:48:33"))

@@ -26,17 +26,19 @@ def read_excel_data(file_name: str, data_folder: str = "../data/") -> list[dict]
             logger.error(f"Файл {file_path} не существует.")
             return []
 
-        data = pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
 
-        data["Номер карты"] = data["Номер карты"].astype(str).str.replace("*", "")
-        data["Сумма операции"] = pd.to_numeric(data["Сумма операции"], errors="coerce")
-        data["Сумма операции"] = data["Сумма операции"].fillna(0)
+        df["Номер карты"] = df["Номер карты"].fillna("Unknown")# Замена NaN на "Unknown" или 0
+        df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
+        df["MCC"] = df["MCC"].fillna(0).astype(int)
 
-        logger.info(f"Файл успешно прочитан: {file_name}")
-        return data.to_dict(orient="records")
+        if "Сумма операции" in df.columns:
+            df["Сумма операции"] = df["Сумма операции"].round(2) # Округление до двух знаков после запятой
+
+        return df.to_dict(orient="records")
+
     except Exception as e:
-        logger.error(f"Ошибка чтения файла {file_name}. Ошибка: {e}")
-        return []
+        raise ValueError(f"Ошибка при чтении файла {file_path}: {e}")
 
 
 def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
@@ -45,22 +47,27 @@ def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
     """
     try:
         df = pd.DataFrame(transactions)
-        required_columns = {"Дата операции", "Сумма операции", "Номер карты", "Категория", "Описание"}
-        if not required_columns.issubset(df.columns):
-            logger.error("Отсутствуют необходимые столбцы в данных.")
-            return []
 
-        df["Сумма операции"] = pd.to_numeric(df["Сумма операции"], errors="coerce")
+        # Замена NaN значений
+        df["Номер карты"] = df["Номер карты"].fillna("Unknown")
+        df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
+        df["MCC"] = df["MCC"].fillna(0).astype(int)
 
-        df = df.sort_values(by="Сумма операции", ascending=False)
+        required_columns = [
+            "Дата операции", "Дата платежа", "Номер карты", "Статус", "Сумма операции",
+            "Валюта операции", "Сумма платежа", "Валюта платежа", "Кэшбэк", "Категория",
+            "MCC", "Описание", "Бонусы (включая кэшбэк)", "Округление на инвесткопилку",
+            "Сумма операции с округлением", "datetime"
+        ]
 
-        top_operations = df.head(top_n).to_dict(orient="records")
+        df = df[required_columns]
 
-        logger.info("Операции успешно обработаны.")
-        return top_operations
+        top_transactions = df.sort_values(by="Сумма операции", ascending=False).head(5)
+
+        return top_transactions.to_dict(orient="records")
+
     except Exception as e:
-        logger.error(f"Ошибка обработки операций: {e}")
-        return []
+        raise ValueError(f"Ошибка при получении ТОП-операций: {e}")
 
 
 def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
@@ -68,32 +75,22 @@ def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
     Функция возвращает общую информацию по транзакциям
     """
     try:
-        df = pd.DataFrame(transactions)
-        required_columns = {"Номер карты", "Сумма операции", "Кэшбэк"}
-        if not required_columns.issubset(df.columns):
-            logger.error("Столбец отсутствует .")
-            return []
-
-        df_grouped = df.groupby("Номер карты").agg({"Сумма операции": "sum", "Кэшбэк": "sum"}).reset_index()
-        df_grouped["Сумма операции"] = df_grouped["Сумма операции"].abs()
-
         result = []
-        for _, row in df_grouped.iterrows():
-            total_spent = row["Сумма операции"]
-            cashback_percentage = round(row["Кэшбэк"] / total_spent * 100, 2) if total_spent > 0 else 0
-            result.append(
-                {
-                    "last_digits": str(row["Номер карты"])[-4:],
-                    "total_spent": total_spent,
-                    "cashback_percentage": cashback_percentage,
-                }
-            )
+        for transaction in transactions:
+            last_digits = transaction.get("Номер карты", "Unknown")
+            total_spent = round(transaction.get("Сумма операции", 0), 2)
+            cashback_percentage = round(transaction.get("Кэшбэк", 0), 2)
 
-        logger.info("Успешно обработана информация.")
+            result.append({
+                "last_digits": last_digits,
+                "total_spent": total_spent,
+                "cashback_percentage": cashback_percentage
+            })
+
         return result
+
     except Exception as e:
-        logger.error(f"Ошибка обработки. Ошибка: {e}")
-        return []
+        raise ValueError(f"Ошибка при обработке транзакций: {e}")
 
 
 def greet_user() -> str:
