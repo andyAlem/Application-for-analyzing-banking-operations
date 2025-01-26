@@ -28,12 +28,17 @@ def read_excel_data(file_name: str, data_folder: str = "../data/") -> list[dict]
 
         df = pd.read_excel(file_path)
 
-        df["Номер карты"] = df["Номер карты"].fillna("Unknown")# Замена NaN на "Unknown" или 0
+        # Замена NaN на "Unknown" или 0
+        df["Номер карты"] = df["Номер карты"].fillna("Unknown").str.replace("*", "", regex=False)
+
+        if "Кэшбэк" not in df.columns:
+            df["Кэшбэк"] = 0
+
         df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
         df["MCC"] = df["MCC"].fillna(0).astype(int)
 
         if "Сумма операции" in df.columns:
-            df["Сумма операции"] = df["Сумма операции"].round(2) # Округление до двух знаков после запятой
+            df["Сумма операции"] = df["Сумма операции"].round(2)  # Округление до двух знаков после запятой
 
         return df.to_dict(orient="records")
 
@@ -50,19 +55,36 @@ def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
 
         # Замена NaN значений
         df["Номер карты"] = df["Номер карты"].fillna("Unknown")
+
+        if "Кэшбэк" not in df.columns:
+            df["Кэшбэк"] = 0
+
         df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
         df["MCC"] = df["MCC"].fillna(0).astype(int)
 
         required_columns = [
-            "Дата операции", "Дата платежа", "Номер карты", "Статус", "Сумма операции",
-            "Валюта операции", "Сумма платежа", "Валюта платежа", "Кэшбэк", "Категория",
-            "MCC", "Описание", "Бонусы (включая кэшбэк)", "Округление на инвесткопилку",
-            "Сумма операции с округлением", "datetime"
+            "Дата операции",
+            "Дата платежа",
+            "Номер карты",
+            "Статус",
+            "Сумма операции",
+            "Валюта операции",
+            "Сумма платежа",
+            "Валюта платежа",
+            "Кэшбэк",
+            "Категория",
+            "MCC",
+            "Описание",
+            "Бонусы (включая кэшбэк)",
+            "Округление на инвесткопилку",
+            "Сумма операции с округлением",
+            "datetime",
         ]
 
-        df = df[required_columns]
+        available_columns = [col for col in required_columns if col in df.columns]
+        df = df[available_columns]
 
-        top_transactions = df.sort_values(by="Сумма операции", ascending=False).head(5)
+        top_transactions = df.sort_values(by="Сумма операции", ascending=False).head(top_n)
 
         return top_transactions.to_dict(orient="records")
 
@@ -72,20 +94,47 @@ def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
 
 def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
     """
-    Функция возвращает общую информацию по транзакциям
+    Функция возвращает общую информацию по транзакциям, суммируя их по картам.
+    Рассчитывает общую потраченную сумму и процент кэшбэка по каждой карте.
     """
     try:
-        result = []
+        card_info = {}
+
         for transaction in transactions:
             last_digits = transaction.get("Номер карты", "Unknown")
-            total_spent = round(transaction.get("Сумма операции", 0), 2)
-            cashback_percentage = round(transaction.get("Кэшбэк", 0), 2)
+            total_spent = transaction.get("Сумма операции", 0)
+            cashback = transaction.get("Кэшбэк", 0)
 
-            result.append({
-                "last_digits": last_digits,
-                "total_spent": total_spent,
-                "cashback_percentage": cashback_percentage
-            })
+            if not isinstance(total_spent, (int, float)):
+                total_spent = 0
+            if not isinstance(cashback, (int, float)):
+                cashback = 0
+
+            if last_digits not in card_info:
+                card_info[last_digits] = {"total_spent": 0, "cashback_sum": 0, "count": 0}
+
+            card_info[last_digits]["total_spent"] += total_spent
+            card_info[last_digits]["cashback_sum"] += cashback
+            card_info[last_digits]["count"] += 1
+
+        result = []
+
+        for card_number, data in card_info.items():
+            total_spent = data["total_spent"]
+            cashback_sum = data["cashback_sum"]
+            cashback_percentage = (cashback_sum / abs(total_spent)) * 100 if total_spent != 0 else 0
+            cashback_percentage = 0.0 if cashback_percentage == -0.0 else cashback_percentage
+
+            if cashback_percentage == 0.0:
+                cashback_percentage = 0
+
+            result.append(
+                {
+                    "last_digits": "Unknown" if card_number == "Unknown" else card_number[-4:],
+                    "total_spent": round(abs(total_spent), 2),
+                    "cashback_percentage": round(cashback_percentage, 2),
+                }
+            )
 
         return result
 

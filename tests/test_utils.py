@@ -14,6 +14,8 @@ def test_read_excel_data():
             "Номер карты": ["*1234", "*5678"],
             "Сумма операции": [-100.50, -200.75],
             "Категория": ["Супермаркеты", "Фастфуд"],
+            "Кэшбэк": [0, 0],
+            "MCC": [0, 0],
         }
     )
     test_file = "test_data.xlsx"
@@ -37,6 +39,8 @@ def test_get_top_operations():
             "Номер карты": "1234",
             "Категория": "Фастфуд",
             "Описание": "McDonald's",
+            "Кэшбэк": 0,
+            "MCC": 0,
         },
         {
             "Дата операции": "2023-01-02",
@@ -44,6 +48,7 @@ def test_get_top_operations():
             "Номер карты": "5678",
             "Категория": "Супермаркеты",
             "Описание": "Magnit",
+            "MCC": 0,
         },
         {
             "Дата операции": "2023-01-03",
@@ -51,6 +56,7 @@ def test_get_top_operations():
             "Номер карты": "1234",
             "Категория": "Фастфуд",
             "Описание": "KFC",
+            "MCC": 0,
         },
     ]
     result = get_top_operations(transactions, top_n=2)
@@ -68,7 +74,7 @@ def test_get_common_transaction_info():
     result = get_common_transaction_info(transactions)
     assert len(result) == 2, "Должны быть данные для двух карт"
     assert result[0]["last_digits"] == "1234", "Номер карты должен быть корректным"
-    assert result[0]["total_spent"] == 250, "Общая сумма операций должна быть положительной"
+    assert result[0]["total_spent"] == 250, "Общая сумма операций должна быть корректной"
     assert result[0]["cashback_percentage"] == 6.0, "Процент кэшбэка должен быть корректным"
 
 
