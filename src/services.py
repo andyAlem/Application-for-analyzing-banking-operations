@@ -6,6 +6,10 @@ from src.utils import read_excel_data
 
 logger = logging.getLogger("my_log")
 logger.setLevel(logging.WARNING)
+file_handler = logging.FileHandler("logfile.log", mode="w", encoding="utf-8")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
 
 
 def get_profitable_cashback_categories(
@@ -26,12 +30,14 @@ def get_profitable_cashback_categories(
     if pattern_year.fullmatch(year) and pattern_month.fullmatch(month):
         try:
             # Чтение данных из Excel-файла
+            logger.info(f"Чтение данных из файла {file_name}")
             data = read_excel_data(file_name, data_folder)
         except Exception as e:
             logger.error(f"Ошибка при чтении данных: {e}")
             return "{}"
 
         if data and 12 >= int(month) > 0:
+            logger.info("Начало обработки транзакций")
             for x in data:
                 try:
                     date_obj = datetime.strptime(x["Дата операции"], "%d.%m.%Y %H:%M:%S")
