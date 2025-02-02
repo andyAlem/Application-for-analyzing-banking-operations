@@ -11,7 +11,7 @@ from src.utils import (fetch_exchange_rates, fetch_stock_prices,
 def main(date_time_str):
     """
     Функция принимает дату в формате строки YYYY-MM-DD HH:MM:SS и возвращает общую информацию в формате
-    json о банковских транзакциях за период с начала месяца до этой даты.
+    json
     """
     try:
         data = read_excel_data("operations.xlsx")
@@ -40,5 +40,5 @@ def main(date_time_str):
         return json.dumps({"Ошибка": f"Ошибка при суммировании. Ошибка: {e}"}, ensure_ascii=False, indent=4)
 
 
-if __name__ == "__main__":
-    print(main(date_time_str="2021-12-31 22:57:26"))
+#if __name__ == "__main__":
+#   print(main(date_time_str="2021-12-31 22:57:26"))

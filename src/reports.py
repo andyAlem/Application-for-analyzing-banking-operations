@@ -2,39 +2,50 @@ import logging
 import os
 from datetime import datetime
 from typing import Optional
-
 import pandas as pd
-from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta #https://www.plus2net.com/python/date-relativedelta.php
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger("spending_by_weekday")
 
 
 def print_spending_by_date(func):
-    """Декоратор для записи результата функции в файл report_1.txt."""
+    """Декоратор для записи результата функции в файл с названием по умолчанию (report.txt)."""
 
     def wrapper(*args, **kwargs):
+        logger.info(f"Вызов функции {func.__name__} для записи отчета в файл report.txt")
         result = func(*args, **kwargs)
-        with open(os.path.join("./print_decorators/report_1.txt"), "w") as file:
-            file.write(result)  # Записываем строку, а не пытаемся вызвать to_string
+
+        os.makedirs("./reports", exist_ok=True)
+
+        with open(os.path.join("./reports/report.txt"), "w") as file:
+            file.write(result)
+
+        logger.info(f"Отчет записан в файл report.txt")
         return result
 
     return wrapper
 
 
-def print_name_spending_by_date(file_name: str):
-    """Декоратор для записи результата функции в указанный файл."""
+def print_name_spending_by_date(file_name: str = "report.txt"):
+    """Декоратор для записи результата функции в указанный файл (или по умолчанию)."""
 
-    def my_decorator(func):
+    def decorator(func):
         def wrapper(*args, **kwargs):
+            logger.info(f"Вызов функции {func.__name__} для записи отчета в файл {file_name}")
             result = func(*args, **kwargs)
-            with open(os.path.join(f"./print_decorators/{file_name}"), "w") as file:
-                file.write(result)  # Записываем строку
+
+            os.makedirs(f"./reports", exist_ok=True)
+
+            with open(os.path.join(f"./reports/{file_name}"), "w") as file:
+                file.write(result)
+
+            logger.info(f"Отчет записан в файл {file_name}")
             return result
 
         return wrapper
 
-    return my_decorator
+    return decorator
 
 
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
@@ -47,19 +58,52 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         else:
             date = datetime.strptime(date, "%Y-%m-%d")
 
-        transactions["datetime"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
+        transactions["datetime"] = pd.to_datetime(transactions["Дата операции"], format="%Y-%m-%d")
         transactions["day_name"] = transactions["datetime"].dt.day_name()
 
         filtered_transactions = transactions[
             (transactions["datetime"] >= (date + relativedelta(months=-3))) & (transactions["datetime"] <= date)
-        ]
+            ]
+
+        logger.info(f"Количество транзакций после фильтрации: {len(filtered_transactions)}")
+
+        if len(filtered_transactions) == 0:
+            logger.warning("Не найдено транзакций за последние 3 месяца.")
 
         grouped = filtered_transactions.groupby(by="day_name")
-        result = grouped["Сумма платежа"].mean().abs().round(2)
+        result = grouped["Сумма платежа"].mean().abs().round(2).sort_index()
 
-        logger.info("Успешное формирование отчета о средних тратах по дням недели.")
-        return result.to_json()  # Результат возвращается как строка JSON
+        logger.info(f"Результат отчета: {result}")
+
+        if result.empty:
+            logger.warning("Результат отчета пуст.")
+
+        return result.to_json()
 
     except Exception as e:
         logger.error(f"Не удалось сформировать отчет. Ошибка: {e}")
         return "{}"
+
+
+@print_spending_by_date
+def generate_spending_report_default():
+    transactions = pd.DataFrame({
+        "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
+        "Сумма платежа": [11, 222, 33],
+    })
+
+    return spending_by_weekday(transactions)
+
+
+@print_name_spending_by_date(file_name="custom_spending_report.txt")
+def generate_spending_report_custom():
+    transactions = pd.DataFrame({
+        "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
+        "Сумма платежа": [11, 222, 33],
+    })
+
+    return spending_by_weekday(transactions)
+
+
+generate_spending_report_default()
+generate_spending_report_custom()
