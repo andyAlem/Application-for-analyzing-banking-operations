@@ -48,30 +48,34 @@ def read_excel_data(file_name: str, data_folder: str = "../data/") -> list[dict]
 
 def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
     """
-    Функция возвращает топ операций".
+    Функция возвращает топ операций, отсортированных по сумме.
     """
     try:
         df = pd.DataFrame(transactions)
 
-        # Замена NaN значений
         df["Номер карты"] = df["Номер карты"].fillna("Unknown")
 
         if "Кэшбэк" not in df.columns:
             df["Кэшбэк"] = 0
 
         df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
+
         df["MCC"] = df["MCC"].fillna(0).astype(int)
 
         if "Дата операции" in df.columns and isinstance(df["Дата операции"].iloc[0], str):
             df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
 
+        df["Дата операции"] = df["Дата операции"].fillna("Unknown")
+
         top_transactions = df.sort_values(by="Сумма операции", ascending=False).head(top_n)
 
         result = []
         for _, row in top_transactions.iterrows():
+            date_str = row["Дата операции"] if row["Дата операции"] != "Unknown" else "Unknown"
+
             result.append(
                 {
-                    "date": row["Дата операции"].strftime("%d.%m.%Y"),
+                    "date": date_str if isinstance(date_str, str) else date_str.strftime("%d.%m.%Y"),
                     "amount": f"{row['Сумма операции']:.2f}",
                     "category": row.get("Категория", "Unknown"),
                     "description": row.get("Описание", "Unknown"),
@@ -82,6 +86,7 @@ def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
 
     except Exception as e:
         raise ValueError(f"Ошибка при получении ТОП-операций: {e}")
+
 
 def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
     """
@@ -121,7 +126,7 @@ def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
 
             result.append(
                 {
-                    "last_digits": "Unknown" if card_number == "Unknown" else card_number[-4:],
+                    "last_digits": "" if card_number == "Unknown" else card_number[-4:],
                     "total_spent": round(abs(total_spent), 2),
                     "cashback_percentage": round(cashback_percentage, 2),
                 }

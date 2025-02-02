@@ -2,8 +2,9 @@ import logging
 import os
 from datetime import datetime
 from typing import Optional
+
 import pandas as pd
-from dateutil.relativedelta import relativedelta #https://www.plus2net.com/python/date-relativedelta.php
+from dateutil.relativedelta import relativedelta
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger("spending_by_weekday")
@@ -27,25 +28,25 @@ def print_spending_by_date(func):
     return wrapper
 
 
-def print_name_spending_by_date(file_name: str = "report.txt"):
+def print_name_spending_by_date(func=None, file_name: str = "report.txt"):
     """Декоратор для записи результата функции в указанный файл (или по умолчанию)."""
 
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            logger.info(f"Вызов функции {func.__name__} для записи отчета в файл {file_name}")
-            result = func(*args, **kwargs)
+    if func is None:
+        return lambda func: print_name_spending_by_date(func, file_name)
 
-            os.makedirs(f"./reports", exist_ok=True)
+    def wrapper(*args, **kwargs):
+        logger.info(f"Вызов функции {func.__name__} для записи отчета в файл {file_name}")
+        result = func(*args, **kwargs)
 
-            with open(os.path.join(f"./reports/{file_name}"), "w") as file:
-                file.write(result)
+        os.makedirs(f"./reports", exist_ok=True)
 
-            logger.info(f"Отчет записан в файл {file_name}")
-            return result
+        with open(os.path.join(f"./reports/{file_name}"), "w") as file:
+            file.write(result)
 
-        return wrapper
+        logger.info(f"Отчет записан в файл {file_name}")
+        return result
 
-    return decorator
+    return wrapper
 
 
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
@@ -65,7 +66,7 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
 
         filtered_transactions = transactions[
             (transactions["datetime"] >= (date + relativedelta(months=-3))) & (transactions["datetime"] <= date)
-            ]
+        ]
 
         logger.info(f"Количество транзакций после фильтрации: {len(filtered_transactions)}")
 
@@ -89,23 +90,27 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
 
 @print_spending_by_date
 def generate_spending_report_default():
-    transactions = pd.DataFrame({
-        "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
-        "Сумма платежа": [11, 222, 33],
-    })
+    transactions = pd.DataFrame(
+        {
+            "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
+            "Сумма платежа": [11, 222, 33],
+        }
+    )
 
     return spending_by_weekday(transactions)
 
 
 @print_name_spending_by_date(file_name="custom_spending_report.txt")
 def generate_spending_report_custom():
-    transactions = pd.DataFrame({
-        "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
-        "Сумма платежа": [11, 222, 33],
-    })
+    transactions = pd.DataFrame(
+        {
+            "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
+            "Сумма платежа": [11, 222, 33],
+        }
+    )
 
     return spending_by_weekday(transactions)
 
 
-# generate_spending_report_default()
-# generate_spending_report_custom()
+generate_spending_report_default()
+generate_spending_report_custom()

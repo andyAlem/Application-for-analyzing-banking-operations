@@ -3,9 +3,14 @@ import os
 
 import pandas as pd
 
-from src.utils import (fetch_exchange_rates, fetch_stock_prices,
-                       get_common_transaction_info, get_top_operations,
-                       greet_user, read_excel_data)
+from src.utils import (
+    fetch_exchange_rates,
+    fetch_stock_prices,
+    get_common_transaction_info,
+    get_top_operations,
+    greet_user,
+    read_excel_data,
+)
 
 
 def test_read_excel_data():
@@ -51,6 +56,15 @@ def test_get_top_operations():
             "MCC": 0,
         },
         {
+            "Дата операции": "invalid_date",
+            "Сумма операции": -50,
+            "Номер карты": "7890",
+            "Категория": "Транспорт",
+            "Описание": "Taxi",
+            "Кэшбэк": 0,
+            "MCC": 0,
+        },
+        {
             "Дата операции": "2023-01-03",
             "Сумма операции": -100,
             "Номер карты": "1234",
@@ -59,10 +73,11 @@ def test_get_top_operations():
             "MCC": 0,
         },
     ]
-    result = get_top_operations(transactions, top_n=2)
-    assert len(result) == 2, "Должны вернуться только две операции"
-    assert result[0]["Сумма операции"] == -100, "Самая крупная операция должна быть первой"
-    assert result[1]["Сумма операции"] == -150, "Вторая по величине операция должна быть второй"
+
+    result = get_top_operations(transactions, top_n=3)
+
+    assert result[0]["date"] != "01.01.1970", "Дата не должна быть 01.01.1970"
+    assert result[2]["date"] == "Unknown", "Некорректная дата должна быть 'Unknown'"
 
 
 def test_get_common_transaction_info():

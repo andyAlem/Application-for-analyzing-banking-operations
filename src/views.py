@@ -3,9 +3,14 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.utils import (fetch_exchange_rates, fetch_stock_prices,
-                       get_common_transaction_info, get_top_operations,
-                       greet_user, read_excel_data)
+from src.utils import (
+    fetch_exchange_rates,
+    fetch_stock_prices,
+    get_common_transaction_info,
+    get_top_operations,
+    greet_user,
+    read_excel_data,
+)
 
 
 def main(date_time_str):
@@ -40,5 +45,5 @@ def main(date_time_str):
         return json.dumps({"Ошибка": f"Ошибка при суммировании. Ошибка: {e}"}, ensure_ascii=False, indent=4)
 
 
-#if __name__ == "__main__":
-#   print(main(date_time_str="2021-12-31 22:57:26"))
+# if __name__ == "__main__":
+#     print(main(date_time_str="2021-12-16 14:52:33"))
