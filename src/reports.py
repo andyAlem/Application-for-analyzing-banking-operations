@@ -58,6 +58,8 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         else:
             date = datetime.strptime(date, "%Y-%m-%d")
 
+        date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+
         transactions["datetime"] = pd.to_datetime(transactions["Дата операции"], format="%Y-%m-%d")
         transactions["day_name"] = transactions["datetime"].dt.day_name()
 
@@ -105,5 +107,5 @@ def generate_spending_report_custom():
     return spending_by_weekday(transactions)
 
 
-generate_spending_report_default()
-generate_spending_report_custom()
+# generate_spending_report_default()
+# generate_spending_report_custom()
