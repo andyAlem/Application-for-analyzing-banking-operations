@@ -48,7 +48,7 @@ def read_excel_data(file_name: str, data_folder: str = "../data/") -> list[dict]
 
 def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
     """
-    Функция возвращает топ N крупных операций из столбца "Сумма операции".
+    Функция возвращает топ операций".
     """
     try:
         df = pd.DataFrame(transactions)
@@ -62,35 +62,26 @@ def get_top_operations(transactions: list[dict], top_n: int = 5) -> list[dict]:
         df["Кэшбэк"] = df["Кэшбэк"].fillna(0).round(2)
         df["MCC"] = df["MCC"].fillna(0).astype(int)
 
-        required_columns = [
-            "Дата операции",
-            "Дата платежа",
-            "Номер карты",
-            "Статус",
-            "Сумма операции",
-            "Валюта операции",
-            "Сумма платежа",
-            "Валюта платежа",
-            "Кэшбэк",
-            "Категория",
-            "MCC",
-            "Описание",
-            "Бонусы (включая кэшбэк)",
-            "Округление на инвесткопилку",
-            "Сумма операции с округлением",
-            "datetime",
-        ]
-
-        available_columns = [col for col in required_columns if col in df.columns]
-        df = df[available_columns]
+        if "Дата операции" in df.columns and isinstance(df["Дата операции"].iloc[0], str):
+            df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
 
         top_transactions = df.sort_values(by="Сумма операции", ascending=False).head(top_n)
 
-        return top_transactions.to_dict(orient="records")
+        result = []
+        for _, row in top_transactions.iterrows():
+            result.append(
+                {
+                    "date": row["Дата операции"].strftime("%d.%m.%Y"),
+                    "amount": f"{row['Сумма операции']:.2f}",
+                    "category": row.get("Категория", "Unknown"),
+                    "description": row.get("Описание", "Unknown"),
+                }
+            )
+
+        return result
 
     except Exception as e:
         raise ValueError(f"Ошибка при получении ТОП-операций: {e}")
-
 
 def get_common_transaction_info(transactions: list[dict]) -> list[dict]:
     """
