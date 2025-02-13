@@ -9,7 +9,6 @@ from dateutil.relativedelta import relativedelta
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger("spending_by_weekday")
 
-
 def print_spending_by_date(func):
     """Декоратор для записи результата функции в файл с названием по умолчанию (report.txt)."""
 
@@ -27,27 +26,36 @@ def print_spending_by_date(func):
 
     return wrapper
 
-
-def print_name_spending_by_date(func=None, file_name: str = "report.txt"):
+def print_name_spending_by_date(file_name: str = 'file.log'):
     """Декоратор для записи результата функции в указанный файл (или по умолчанию)."""
 
-    if func is None:
-        return lambda func: print_name_spending_by_date(func, file_name)
+    def wrapper(func):
+        def inner(*args, **kwargs):
+            try:
+                logger.info(f"Вызов функции {func.__name__} для записи отчета в файл {file_name}")
+                result = func(*args, **kwargs)
 
-    def wrapper(*args, **kwargs):
-        logger.info(f"Вызов функции {func.__name__} для записи отчета в файл {file_name}")
-        result = func(*args, **kwargs)
+                os.makedirs(f"./reports", exist_ok=True)
 
-        os.makedirs(f"./reports", exist_ok=True)
+                with open(os.path.join(f"./reports/{file_name}"), "w") as file:
+                    file.write(result)
 
-        with open(os.path.join(f"./reports/{file_name}"), "w") as file:
-            file.write(result)
+                logger.info(f"Отчет записан в файл {file_name}")
+                return result
 
-        logger.info(f"Отчет записан в файл {file_name}")
-        return result
+            except Exception as error:
+                logger.error(f"Ошибка при выполнении функции {func.__name__}: {error}")
+
+                os.makedirs(f"./reports", exist_ok=True)
+
+                with open(os.path.join(f"./reports/{file_name}"), "w") as file:
+                    file.write(f"Ошибка: {error}")
+
+                return "{}"
+
+        return inner
 
     return wrapper
-
 
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
     """
@@ -87,7 +95,6 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         logger.error(f"Не удалось сформировать отчет. Ошибка: {e}")
         return "{}"
 
-
 @print_spending_by_date
 def generate_spending_report_default():
     transactions = pd.DataFrame(
@@ -99,7 +106,6 @@ def generate_spending_report_default():
 
     return spending_by_weekday(transactions)
 
-
 @print_name_spending_by_date(file_name="custom_spending_report.txt")
 def generate_spending_report_custom():
     transactions = pd.DataFrame(
@@ -110,7 +116,6 @@ def generate_spending_report_custom():
     )
 
     return spending_by_weekday(transactions)
-
 
 generate_spending_report_default()
 generate_spending_report_custom()

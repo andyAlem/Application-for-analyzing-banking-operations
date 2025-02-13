@@ -1,16 +1,13 @@
 import json
 import os
+import urllib.request
+from unittest.mock import MagicMock, mock_open, patch
 
 import pandas as pd
 
-from src.utils import (
-    fetch_exchange_rates,
-    fetch_stock_prices,
-    get_common_transaction_info,
-    get_top_operations,
-    greet_user,
-    read_excel_data,
-)
+from src.utils import (fetch_exchange_rates, fetch_stock_prices,
+                       get_common_transaction_info, get_top_operations,
+                       greet_user, read_excel_data)
 
 
 def test_read_excel_data():
@@ -103,33 +100,37 @@ def test_greet_user():
     ], "Приветствие должно быть корректным"
 
 
-def test_fetch_exchange_rates():
-    test_settings = {"user_currencies": ["USD", "EUR"]}
-    test_file = "test_settings.json"
-    with open(test_file, "w", encoding="utf-8") as file:
-        json.dump(test_settings, file)
+@patch("os.path.exists", return_value=True)
+@patch("requests.get")
+@patch("builtins.open", new_callable=mock_open, read_data='{"user_currencies": ["USD", "EUR"]}')
+def test_fetch_exchange_rates(mock_open_file, mock_get, mock_exists):
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"Valute": {"USD": {"Value": 75.0}, "EUR": {"Value": 85.0}}}
+    mock_get.return_value = mock_response
 
-    try:
-        result = fetch_exchange_rates(test_file, data_folder="./")
-        assert isinstance(result, list), "Результат должен быть списком"
-        assert all(
-            "currency" in item and "exchange_rate" in item for item in result
-        ), "Каждый элемент должен содержать валюту и курс"
-    finally:
-        os.remove(test_file)
+    expected_result = [{"currency": "USD", "exchange_rate": 75.0}, {"currency": "EUR", "exchange_rate": 85.0}]
+
+    result = fetch_exchange_rates("test_settings.json", data_folder="./")
+
+    assert result == expected_result, f"Ожидалось {expected_result}, но получено {result}"
 
 
-def test_fetch_stock_prices():
-    test_settings = {"user_stocks": ["AAPL", "GOOGL"]}
-    test_file = "test_settings.json"
-    with open(test_file, "w", encoding="utf-8") as file:
-        json.dump(test_settings, file)
+@patch("urllib.request.urlopen")
+@patch("builtins.open", new_callable=mock_open, read_data='{"user_stocks": ["AAPL", "GOOGL"]}')
+@patch("os.path.exists", return_value=True)
+def test_fetch_stock_prices(mock_open_file, mock_urlopen, mock_exists):
+    mock_response = MagicMock()
 
-    try:
-        result = fetch_stock_prices(test_file, data_folder="./")
-        assert isinstance(result, list), "Результат должен быть списком"
-        assert all(
-            "stock" in item and "price" in item for item in result
-        ), "Каждый элемент должен содержать акцию и цену"
-    finally:
-        os.remove(test_file)
+    mock_response.read.return_value = json.dumps(
+        [{"symbol": "AAPL", "price": 150.0}, {"symbol": "GOOGL", "price": 2800.0}]
+    ).encode("utf-8")
+
+    mock_urlopen.return_value = mock_response
+
+    expected_result = [{"stock": "AAPL", "price": 150.0}, {"stock": "GOOGL", "price": 2800.0}]
+
+    result = fetch_stock_prices("test_settings.json", data_folder="./")
+
+    print("Полученный результат:", result)
+
+    assert result == expected_result, f"Ожидалось {expected_result}, но получено {result}"

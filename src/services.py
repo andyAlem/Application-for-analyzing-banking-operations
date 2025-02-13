@@ -76,7 +76,11 @@ def get_profitable_cashback_categories(
 
     logger.info("Приводим результат к формату json")
 
-    filtered_result = dict(sorted(result.items(), key=lambda value: value[1], reverse=True))
+    rounded_result = {category: round(cashback, 2) for category, cashback in result.items()}
+    filtered_result = dict(sorted(rounded_result.items(), key=lambda value: value[1], reverse=True))
     parsed_result = json.dumps(filtered_result, ensure_ascii=False)
 
     return parsed_result
+
+
+

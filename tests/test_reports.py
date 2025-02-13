@@ -2,7 +2,8 @@ from unittest.mock import mock_open, patch
 
 import pandas as pd
 
-from src.reports import print_name_spending_by_date, print_spending_by_date, spending_by_weekday
+from src.reports import (print_name_spending_by_date, print_spending_by_date,
+                         spending_by_weekday)
 
 
 def test_spending_by_weekday_default_date(sample_data):
