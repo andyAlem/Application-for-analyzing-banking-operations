@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger("spending_by_weekday")
 
+
 def print_spending_by_date(func):
     """Декоратор для записи результата функции в файл с названием по умолчанию (report.txt)."""
 
@@ -26,7 +27,8 @@ def print_spending_by_date(func):
 
     return wrapper
 
-def print_name_spending_by_date(file_name: str = 'file.log'):
+
+def print_name_spending_by_date(file_name: str = "file.log"):
     """Декоратор для записи результата функции в указанный файл (или по умолчанию)."""
 
     def wrapper(func):
@@ -57,6 +59,9 @@ def print_name_spending_by_date(file_name: str = 'file.log'):
 
     return wrapper
 
+
+@print_name_spending_by_date(file_name="custom_spending_report.txt")
+@print_spending_by_date
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> str:
     """
     Возвращает средние траты в каждый из дней недели за последние три месяца.
@@ -94,28 +99,3 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
     except Exception as e:
         logger.error(f"Не удалось сформировать отчет. Ошибка: {e}")
         return "{}"
-
-@print_spending_by_date
-def generate_spending_report_default():
-    transactions = pd.DataFrame(
-        {
-            "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
-            "Сумма платежа": [11, 222, 33],
-        }
-    )
-
-    return spending_by_weekday(transactions)
-
-@print_name_spending_by_date(file_name="custom_spending_report.txt")
-def generate_spending_report_custom():
-    transactions = pd.DataFrame(
-        {
-            "Дата операции": ["2025-02-02", "2024-11-11", "2024-03-14"],
-            "Сумма платежа": [11, 222, 33],
-        }
-    )
-
-    return spending_by_weekday(transactions)
-
-generate_spending_report_default()
-generate_spending_report_custom()

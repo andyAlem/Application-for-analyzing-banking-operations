@@ -1,13 +1,17 @@
 import json
 import os
-import urllib.request
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import ANY, MagicMock, mock_open, patch
 
 import pandas as pd
 
-from src.utils import (fetch_exchange_rates, fetch_stock_prices,
-                       get_common_transaction_info, get_top_operations,
-                       greet_user, read_excel_data)
+from src.utils import (
+    fetch_exchange_rates,
+    fetch_stock_prices,
+    get_common_transaction_info,
+    get_top_operations,
+    greet_user,
+    read_excel_data,
+)
 
 
 def test_read_excel_data():
@@ -115,22 +119,23 @@ def test_fetch_exchange_rates(mock_open_file, mock_get, mock_exists):
     assert result == expected_result, f"Ожидалось {expected_result}, но получено {result}"
 
 
-@patch("urllib.request.urlopen")
+@patch("src.utils.urlopen")  # Правильный путь!!
 @patch("builtins.open", new_callable=mock_open, read_data='{"user_stocks": ["AAPL", "GOOGL"]}')
 @patch("os.path.exists", return_value=True)
-def test_fetch_stock_prices(mock_open_file, mock_urlopen, mock_exists):
+@patch("os.getenv", return_value="test_api_key")
+@patch("dotenv.load_dotenv", return_value=None)
+def test_fetch_stock_prices(mock_load_dotenv, mock_getenv, mock_exists, mock_open_file, mock_urlopen):
     mock_response = MagicMock()
-
     mock_response.read.return_value = json.dumps(
         [{"symbol": "AAPL", "price": 150.0}, {"symbol": "GOOGL", "price": 2800.0}]
     ).encode("utf-8")
-
     mock_urlopen.return_value = mock_response
 
     expected_result = [{"stock": "AAPL", "price": 150.0}, {"stock": "GOOGL", "price": 2800.0}]
 
     result = fetch_stock_prices("test_settings.json", data_folder="./")
 
-    print("Полученный результат:", result)
+    expected_url = "https://financialmodelingprep.com/api/v3/stock/list?apikey=test_api_key"
+    mock_urlopen.assert_called_once_with(expected_url, context=ANY)
 
     assert result == expected_result, f"Ожидалось {expected_result}, но получено {result}"

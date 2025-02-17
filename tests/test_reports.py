@@ -2,8 +2,44 @@ from unittest.mock import mock_open, patch
 
 import pandas as pd
 
-from src.reports import (print_name_spending_by_date, print_spending_by_date,
-                         spending_by_weekday)
+from src.reports import print_name_spending_by_date, print_spending_by_date, spending_by_weekday
+
+
+def test_print_spending_by_date(sample_data):
+    """
+    Тестирует декоратор print_spending_by_date.
+    Проверяет, что результат работы функции записывается в файл с именем report.txt.
+    """
+    decorated_function = print_spending_by_date(spending_by_weekday)
+
+    with patch("builtins.open", mock_open()) as mocked_file:
+        decorated_function(sample_data)
+
+        print(f"mocked_file call count: {mocked_file.call_count}")
+
+        mocked_file.assert_any_call("./reports/custom_spending_report.txt", "w")
+        mocked_file.assert_any_call("./reports/report.txt", "w")
+
+
+def test_print_name_spending_by_date(sample_data):
+    """
+    Тестирует декоратор print_name_spending_by_date с кастомным именем файла.
+    Проверяет, что результат работы функции записывается в файл с указанным именем.
+    """
+    decorated_function = print_name_spending_by_date(file_name="custom_spending_report.txt")(spending_by_weekday)
+
+    with patch("builtins.open", mock_open()) as mocked_file:
+        decorated_function(sample_data)
+
+        print(f"mocked_file call count: {mocked_file.call_count}")
+
+        mocked_file.assert_any_call("./reports/custom_spending_report.txt", "w")
+
+        mocked_file.assert_any_call("./reports/report.txt", "w")
+
+        mocked_file().write.assert_called_with(
+            '{"Friday":150.0,"Saturday":50.0,"Sunday":300.0,"Thursday":200.0,"Wednesday":100.0}'
+        )
 
 
 def test_spending_by_weekday_default_date(sample_data):
@@ -37,36 +73,6 @@ def test_spending_by_weekday_no_transactions(sample_data):
     sample_data_empty = sample_data.copy().iloc[0:0]
     result = spending_by_weekday(sample_data_empty)
     assert result == "{}"
-
-
-def test_print_spending_by_date(sample_data):
-    """
-    Тестирует декоратор print_spending_by_date.
-    Проверяет, что результат работы функции записывается в файл с именем report.txt.
-    """
-    decorated_function = print_spending_by_date(spending_by_weekday)
-
-    with patch("builtins.open", mock_open()) as mocked_file:
-        decorated_function(sample_data)
-
-        mocked_file.assert_called_once_with("./reports/report.txt", "w")
-
-        mocked_file().write.assert_called_once()
-
-
-def test_print_name_spending_by_date(sample_data):
-    """
-    Тестирует декоратор print_name_spending_by_date с кастомным именем файла.
-    Проверяет, что результат работы функции записывается в файл с указанным именем.
-    """
-    decorated_function = print_name_spending_by_date(file_name="custom_report.txt")(spending_by_weekday)
-
-    with patch("builtins.open", mock_open()) as mocked_file:
-        decorated_function(sample_data)
-
-        mocked_file.assert_called_once_with("./reports/custom_report.txt", "w")
-
-        mocked_file().write.assert_called_once()
 
 
 def test_spending_by_weekday_error():

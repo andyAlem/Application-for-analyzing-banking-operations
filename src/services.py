@@ -1,7 +1,8 @@
 import json
+import logging
 import re
 from datetime import datetime
-import logging
+
 from src.utils import read_excel_data
 
 logger = logging.getLogger("my_log")
@@ -81,6 +82,3 @@ def get_profitable_cashback_categories(
     parsed_result = json.dumps(filtered_result, ensure_ascii=False)
 
     return parsed_result
-
-
-

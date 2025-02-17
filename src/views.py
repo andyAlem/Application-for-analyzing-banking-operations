@@ -3,14 +3,9 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.utils import (
-    fetch_exchange_rates,
-    fetch_stock_prices,
-    get_common_transaction_info,
-    get_top_operations,
-    greet_user,
-    read_excel_data,
-)
+from src.utils import (fetch_exchange_rates, fetch_stock_prices,
+                       get_common_transaction_info, get_top_operations,
+                       greet_user, read_excel_data)
 
 
 def main(date_time_str):

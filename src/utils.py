@@ -188,17 +188,16 @@ def fetch_exchange_rates(settings_file: str, data_folder: str = "../data/") -> l
 
 
 def fetch_stock_prices(settings_file: str, data_folder: str = "../data/") -> list[dict]:
-    """
-    Функция получает json-файл с тикерами акций и API для получения котировок этих акций.
-    """
     try:
         load_dotenv()
         api_key = os.getenv("API_KEY")
+        print(f"Загружен API_KEY: {api_key}")
         if not api_key:
             logger.error("API_KEY не найден.")
             return []
 
         config_path = os.path.join(data_folder, settings_file)
+        print(f"Путь к конфигурационному файлу: {config_path}")
         if not os.path.exists(config_path):
             logger.error(f"Файл отсутствует {config_path}.")
             return []
@@ -207,10 +206,14 @@ def fetch_stock_prices(settings_file: str, data_folder: str = "../data/") -> lis
             user_config = json.load(file)
 
         stocks = user_config.get("user_stocks", [])
+        print(f"Тикеры из файла: {stocks}")
 
         ssl_context = ssl.create_default_context(cafile=certifi.where())
+        print("SSL-контекст создан.")
 
         url = f"https://financialmodelingprep.com/api/v3/stock/list?apikey={api_key}"
+        print(f"URL для запроса: {url}")
+
         response = urlopen(url, context=ssl_context)  # Используем context вместо cafile
         stock_data = json.loads(response.read().decode("utf-8"))
 
